@@ -31,13 +31,13 @@ class ProfileResponse(BaseModel):
     profile_picture: Optional[str] = None
     
     # New Tenant Fields
-    alternate_email: Optional[EmailStr] = None
+    alternate_email: Optional[str] = None
     company_website: Optional[str] = None
     gst_number: Optional[str] = None
     
     # Notifications
-    email_alerts: bool = True
-    whatsapp_alerts: bool = True
+    email_alerts: Optional[bool] = True
+    whatsapp_alerts: Optional[bool] = True
 
 class ProfileUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -96,8 +96,8 @@ async def get_profile(
         alternate_email=tenant.alternate_email if tenant else None,
         company_website=tenant.company_website if tenant else None,
         gst_number=tenant.gst_number if tenant else None,
-        email_alerts=current_user.email_alerts,
-        whatsapp_alerts=current_user.whatsapp_alerts
+        email_alerts=current_user.email_alerts if current_user.email_alerts is not None else True,
+        whatsapp_alerts=current_user.whatsapp_alerts if current_user.whatsapp_alerts is not None else True
     )
 
 @router.put("/")
