@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "alerts@example.com"
 
     # ── Ping method configuration ────────────────────────
-    PING_METHOD: str = "icmp"  # "icmp" or "tcp"
+    PING_METHOD: str = "tcp"  # "icmp" or "tcp"
     PING_TCP_PORT: int = 80
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
