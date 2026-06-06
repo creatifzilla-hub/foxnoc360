@@ -13,6 +13,7 @@ interface FormModalProps {
   cancelLabel?: string;
   width?: number;
   children: ReactNode;
+  loading?: boolean;
 }
 
 /**
@@ -30,6 +31,7 @@ export default function FormModal({
   cancelLabel = "Cancel",
   width = 500,
   children,
+  loading = false,
 }: FormModalProps) {
   return (
     <Modal open={open} onClose={onClose} width={width}>
@@ -40,10 +42,10 @@ export default function FormModal({
         <div className="px-7 py-6 space-y-5">{children}</div>
 
         <ModalFooter>
-          <ModalBtn type="button" variant="ghost" onClick={onClose}>
+          <ModalBtn type="button" variant="ghost" onClick={onClose} disabled={loading}>
             {cancelLabel}
           </ModalBtn>
-          <ModalBtn type="submit" variant="primary">
+          <ModalBtn type="submit" variant="primary" loading={loading}>
             {submitLabel}
           </ModalBtn>
         </ModalFooter>

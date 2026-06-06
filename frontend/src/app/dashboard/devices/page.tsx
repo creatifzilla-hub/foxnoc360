@@ -37,6 +37,8 @@ export default function DevicesAdminPage() {
   const [form, setForm] = useState({ id: "", name: "", ip_address: "", location: "", customer_id: "", status: "up" });
   const [isEditing, setIsEditing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   
   // Subscription limits
   const [maxDevices, setMaxDevices] = useState(0);
@@ -92,6 +94,7 @@ export default function DevicesAdminPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -127,6 +130,8 @@ export default function DevicesAdminPage() {
     } catch (e) {
       console.error(e);
       alert("A network error occurred.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -136,6 +141,7 @@ export default function DevicesAdminPage() {
       "Are you sure you want to delete this device? All associated ping logs and downtime records will also be removed.",
       async () => {
         closeConfirm();
+        setActionLoading(true);
         try {
           const token = localStorage.getItem("token");
           const res = await fetch(`${API_BASE}/devices/${id}`, {
@@ -150,7 +156,11 @@ export default function DevicesAdminPage() {
               return next;
             });
           }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+          console.error(e); 
+        } finally {
+          setActionLoading(false);
+        }
       }
     );
   };
@@ -274,6 +284,7 @@ export default function DevicesAdminPage() {
       `Are you sure you want to permanently delete ${selectedIds.size} selected device(s)? All associated ping logs and downtime records will also be removed.`,
       async () => {
         closeConfirm();
+        setActionLoading(true);
         try {
           const token = localStorage.getItem("token");
           const res = await fetch(`${API_BASE}/devices/bulk-delete`, {
@@ -292,6 +303,8 @@ export default function DevicesAdminPage() {
         } catch (e) {
           console.error(e);
           toastError("A network error occurred during bulk delete.");
+        } finally {
+          setActionLoading(false);
         }
       }
     );
@@ -629,6 +642,7 @@ export default function DevicesAdminPage() {
         onClose={() => setShowModal(false)}
         onSubmit={handleSubmit}
         submitLabel={isEditing ? "Save Changes" : "Save Device"}
+        loading={saving}
       >
         <FormField label="Assign to Customer">
           <select
@@ -693,6 +707,18 @@ export default function DevicesAdminPage() {
           onConfirm={handleResetSLA}
           onCancel={() => setResetSLAModal(null)}
         />
+      )}
+
+      {(actionLoading || resetting || isImporting) && (
+        <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
+          <div className="flex flex-col items-center gap-3 bg-neutral-900/80 px-6 py-5 rounded-2xl border border-neutral-800 shadow-xl">
+            <svg className="w-10 h-10 animate-spin text-[var(--accent)]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+            <span className="text-sm font-medium text-white select-none">Processing...</span>
+          </div>
+        </div>
       )}
     </div>
   );
