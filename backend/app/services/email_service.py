@@ -23,9 +23,8 @@ async def send_email_alert(subject: str, message: str, recipient: str, attachmen
             "Content-Type": "application/json"
         }
         
-        # Always use Resend's default sender on free plan (no domain verification needed)
-        # To use a custom domain, verify it at https://resend.com/domains
-        from_email = "onboarding@resend.dev"
+        # foxnoc360.com is verified on Resend — send from official domain
+        from_email = "noreply@foxnoc360.com"
 
             
         payload = {
