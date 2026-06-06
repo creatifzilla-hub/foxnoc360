@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.services.auth import require_sla_reports, get_current_user
+from app.services.auth import require_sla_reports, get_current_user, get_token_payload
 from app.services.sla_service import calculate_device_uptime
 from app.models.device import Device
 from app.models.customer import Customer
@@ -58,18 +58,22 @@ async def get_sla_summary(
     end_date: datetime = Query(...),
     threshold: float = Query(99.9),
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(require_sla_reports)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """
     Returns aggregated SLA statistics for all devices under the tenant.
     """
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     from app.services.sla_service import calculate_sla_summary
     return await calculate_sla_summary(
         db=db,
         tenant_id=current_tenant,
         start_date=start_date,
         end_date=end_date,
-        sla_threshold=threshold
+        sla_threshold=threshold,
+        is_super=is_super
     )
 
 
@@ -80,11 +84,23 @@ async def get_device_sla_report(
     end_date: datetime = Query(..., description="End of reporting window (ISO format)"),
     threshold: float = Query(99.9),
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(require_sla_reports)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """
     Returns the SLA Uptime percentage and incident breakdown for a specific device.
     """
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
+    # Security check: Ensure device exists and belongs to tenant
+    dev_stmt = select(Device).where(Device.id == device_id)
+    if not is_super:
+        dev_stmt = dev_stmt.where(Device.tenant_id == current_tenant)
+    dev_result = await db.execute(dev_stmt)
+    device = dev_result.scalars().first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
     report = await calculate_device_uptime(
         db=db,
         device_id=device_id,
@@ -122,14 +138,24 @@ async def get_customer_sla_report(
     end_date: datetime = Query(...),
     threshold: float = Query(99.5),
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(require_sla_reports)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """
     Generate an aggregated SLA report for all devices associated with a specific customer.
     """
     from app.services.sla_service import get_customer_sla_summary
     
-    # In a full multi-tenant env, verify customer belongs to current_tenant here
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
+    # Security check: Ensure customer belongs to tenant
+    cust_stmt = select(Customer).where(Customer.id == customer_id)
+    if not is_super:
+        cust_stmt = cust_stmt.where(Customer.tenant_id == current_tenant)
+    cust_result = await db.execute(cust_stmt)
+    if not cust_result.scalars().first():
+         raise HTTPException(status_code=404, detail="Customer not found")
+
     summary = await get_customer_sla_summary(
         db=db,
         customer_id=str(customer_id),
@@ -146,7 +172,7 @@ async def download_pdf_sla_report(
     start_date: datetime = Query(...),
     end_date: datetime = Query(...),
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(require_sla_reports)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """
     Download a professionally formatted PDF SLA report for a device and date range.
@@ -154,10 +180,14 @@ async def download_pdf_sla_report(
     from sqlalchemy.orm import joinedload
     from app.services.pdf_service import generate_sla_pdf
 
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     # Fetch device + customer info
-    dev_result = await db.execute(
-        select(Device).options(joinedload(Device.customer)).where(Device.id == device_id)
-    )
+    dev_stmt = select(Device).options(joinedload(Device.customer)).where(Device.id == device_id)
+    if not is_super:
+        dev_stmt = dev_stmt.where(Device.tenant_id == current_tenant)
+    dev_result = await db.execute(dev_stmt)
     device = dev_result.scalars().first()
     if not device:
         from fastapi import HTTPException
@@ -220,7 +250,7 @@ async def share_pdf_sla_report(
     end_date: datetime = Query(...),
     recipient_email: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(require_sla_reports)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """
     Generate an SLA PDF report and email it directly to the associated customer.
@@ -229,10 +259,14 @@ async def share_pdf_sla_report(
     from app.services.pdf_service import generate_sla_pdf
     from app.services.email_service import send_sla_report_email
 
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     # Fetch device + customer info
-    dev_result = await db.execute(
-        select(Device).options(joinedload(Device.customer)).where(Device.id == device_id)
-    )
+    dev_stmt = select(Device).options(joinedload(Device.customer)).where(Device.id == device_id)
+    if not is_super:
+        dev_stmt = dev_stmt.where(Device.tenant_id == current_tenant)
+    dev_result = await db.execute(dev_stmt)
     device = dev_result.scalars().first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")

@@ -242,7 +242,8 @@ async def calculate_sla_summary(
     tenant_id: str,
     start_date: datetime,
     end_date: datetime,
-    sla_threshold: float = 99.9
+    sla_threshold: float = 99.9,
+    is_super: bool = False
 ) -> dict:
     """
     Calculates aggregated SLA metrics for all devices under a tenant.
@@ -250,7 +251,9 @@ async def calculate_sla_summary(
     from app.models.device import Device
     
     # 1. Fetch all devices for the tenant
-    stmt = select(Device).where(Device.tenant_id == tenant_id)
+    stmt = select(Device)
+    if not is_super:
+        stmt = stmt.where(Device.tenant_id == tenant_id)
     result = await db.execute(stmt)
     devices = result.scalars().all()
     
