@@ -1,0 +1,45 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend dependencies and builds
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/tsconfig.tsbuildinfo
+
+# Backend dependencies and virtual environments
+backend/venv/
+backend/.venv/
+backend/env/
+backend/ENV/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files
+*.log
+*.log.*
+*.txt
+backend/*.log
+backend/*.txt
+frontend/*.log
+frontend/*.txt
+
+# Database files
+*.db
+*.sqlite3
+
+# Local environment variables / secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env.local
+
+# Backups
+frontend_backup/

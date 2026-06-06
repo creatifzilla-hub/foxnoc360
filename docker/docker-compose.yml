@@ -1,0 +1,135 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: isp_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: isp_monitor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: isp_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: isp_api
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ../backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/isp_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=change-me-before-production
+      - ALGORITHM=HS256
+      - ALLOWED_ORIGINS=["http://localhost:3000"]
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-alerts@isp-monitor.local}
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: isp_worker
+    restart: unless-stopped
+    command: python worker.py
+    volumes:
+      - ../backend:/app
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/isp_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM:-alerts@isp-monitor.local}
+    depends_on:
+      - postgres
+      - redis
+      - api
+
+  scheduler:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: isp_scheduler
+    restart: unless-stopped
+    command: python scheduler.py
+    volumes:
+      - ../backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/isp_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - EMAIL_FROM=${EMAIL_FROM:-alerts@isp-monitor.local}
+    depends_on:
+      - postgres
+      - redis
+
+  rq_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Scale this service: docker compose up --scale rq_worker=4
+    command: rq worker device_pings --url redis://redis:6379/0
+    volumes:
+      - ../backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/isp_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - EMAIL_FROM=${EMAIL_FROM:-alerts@isp-monitor.local}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER:-}
+    depends_on:
+      - redis
+      - postgres
+
+  snmp_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: isp_snmp_worker
+    restart: unless-stopped
+    command: python snmp_worker.py
+    volumes:
+      - ../backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/isp_monitor
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
