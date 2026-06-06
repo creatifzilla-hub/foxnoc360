@@ -43,3 +43,7 @@ frontend/.env.local
 
 # Backups
 frontend_backup/
+
+# Allow requirements.txt files
+!requirements.txt
+!**/requirements.txt
