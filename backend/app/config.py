@@ -57,6 +57,16 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",")]
         return v
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def convert_database_url_to_async(cls, v: str) -> str:
+        if v:
+            if v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        return v
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
