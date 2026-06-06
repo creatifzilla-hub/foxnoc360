@@ -153,13 +153,10 @@ export default function SLAReportsPage() {
     setSlaData(null);
     try {
       const token = localStorage.getItem("token");
-      // Add one day to end date to include the full last day
-      const dEnd = new Date(endDate);
-      dEnd.setHours(23, 59, 59, 999);
-
+      // Always use UTC-explicit ISO strings to avoid local timezone shifting the range
       const params = new URLSearchParams({
-        start_date: new Date(startDate).toISOString(),
-        end_date: dEnd.toISOString(),
+        start_date: `${startDate}T00:00:00.000Z`,
+        end_date: `${endDate}T23:59:59.999Z`,
       });
       const res = await fetch(`${API_BASE}/sla/device-report/${selectedDevice}?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -267,12 +264,10 @@ export default function SLAReportsPage() {
     if (!devId || !sDate || !eDate) return;
     
     const token = localStorage.getItem("token");
-    const dEnd = new Date(eDate);
-    dEnd.setHours(23, 59, 59, 999);
-
+    // UTC-explicit to avoid timezone shift
     const params = new URLSearchParams({
-      start_date: new Date(sDate).toISOString(),
-      end_date: dEnd.toISOString(),
+      start_date: `${sDate}T00:00:00.000Z`,
+      end_date: `${eDate}T23:59:59.999Z`,
     });
 
     const res = await fetch(`${API_BASE}/sla/pdf-report/${devId}?${params}`, {
@@ -314,12 +309,10 @@ export default function SLAReportsPage() {
     setSharing(reportId || "current");
     try {
       const token = localStorage.getItem("token");
-      const dEnd = new Date(eDate);
-      dEnd.setHours(23, 59, 59, 999);
-
+      // UTC-explicit to avoid timezone shift
       const params = new URLSearchParams({
-        start_date: new Date(sDate).toISOString(),
-        end_date: dEnd.toISOString(),
+        start_date: `${sDate}T00:00:00.000Z`,
+        end_date: `${eDate}T23:59:59.999Z`,
       });
 
       const res = await fetch(`${API_BASE}/sla/share-report/${devId}?${params}`, {
