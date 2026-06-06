@@ -32,12 +32,24 @@ async def send_email_alert(subject: str, message: str, recipient: str, attachmen
             msg.attach(part)
 
         try:
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            # Connect with timeout to prevent hanging if host is unreachable
+            if settings.SMTP_PORT == 465:
+                server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
+            else:
+                server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
+                # Enable STARTTLS security for port 587 or Gmail
+                if settings.SMTP_PORT == 587 or "gmail" in settings.SMTP_HOST.lower():
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+
+            with server:
                 server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
                 server.send_message(msg)
             print(f"[EMAIL SERVICE] Successfully sent email to {recipient}")
         except Exception as e:
             print(f"[EMAIL SERVICE] Failed to send email alert: {e}")
+            raise e  # Re-raise so the endpoint is aware of the failure
 
     await asyncio.to_thread(_send)
 
