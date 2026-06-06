@@ -284,14 +284,20 @@ async def share_pdf_sla_report(
         is_compliant=report["is_compliant"]
     )
 
-    await send_sla_report_email(
-        recipient=target_email,
-        customer_name=customer_name,
-        device_name=device.name,
-        start_date=start_date.strftime('%Y-%m-%d'),
-        end_date=end_date.strftime('%Y-%m-%d'),
-        pdf_content=pdf_bytes
-    )
+    try:
+        await send_sla_report_email(
+            recipient=target_email,
+            customer_name=customer_name,
+            device_name=device.name,
+            start_date=start_date.strftime('%Y-%m-%d'),
+            end_date=end_date.strftime('%Y-%m-%d'),
+            pdf_content=pdf_bytes
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Email delivery failed. Please check your SMTP settings in Render. Error: {str(e)}"
+        )
 
     return {"message": f"SLA Report successfully shared with {target_email}"}
 
