@@ -1,7 +1,9 @@
+from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, case
+from typing import Optional
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
@@ -83,7 +85,7 @@ from app.services.auth import get_token_payload
 async def get_dashboard(
     period: int = 7,
     db: AsyncSession = Depends(get_db),
-    payload: dict | None = None,
+    payload: Optional[dict] = None,
 ):
     # Treat unauthenticated requests as superadmin (public Vercel view)
     if payload is None:
@@ -224,7 +226,7 @@ async def get_dashboard(
 @router.get("/devices-table", response_model=list[DeviceTableResponse])
 async def get_devices_table(
     db: AsyncSession = Depends(get_db),
-    payload: dict | None = None,
+    payload: Optional[dict] = None,
 ):
     # Public access fallback – treat as superadmin
     if payload is None:

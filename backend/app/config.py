@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
 
+    # ── Twilio (WhatsApp alerts) ───────────────────
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_WHATSAPP_NUMBER: str = ""
+
     # ── CORS ─────────────────────────────────────
     ALLOWED_ORIGINS: List[str] = [
         "https://foxnoc360.vercel.app",

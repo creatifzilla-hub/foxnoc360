@@ -65,7 +65,7 @@ async def send_subscription_reminder(tenant_name: str, email: str, plan_name: st
 
     message += f"\n\nRenew here: http://localhost:3000/dashboard/subscriptions"
     
-    send_email_alert(subject, message, email)
+    await send_email_alert(subject, message, email)
 
 def calculate_renewal_price(base_price: float, duration_months: int) -> float:
     """
