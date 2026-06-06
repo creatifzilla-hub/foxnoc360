@@ -23,11 +23,10 @@ async def send_email_alert(subject: str, message: str, recipient: str, attachmen
             "Content-Type": "application/json"
         }
         
-        # Resend free tier sends from onboarding@resend.dev unless custom domain is verified
+        # Always use Resend's default sender on free plan (no domain verification needed)
+        # To use a custom domain, verify it at https://resend.com/domains
         from_email = "onboarding@resend.dev"
-        # If the user configured a custom email and it doesn't look like the default configs:
-        if settings.EMAIL_FROM and not any(d in settings.EMAIL_FROM for d in ["example.com", "isp-monitor.local", "alerts@"]):
-            from_email = settings.EMAIL_FROM
+
             
         payload = {
             "from": f"FoxNOC360 <{from_email}>",
