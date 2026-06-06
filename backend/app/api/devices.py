@@ -123,20 +123,23 @@ async def update_device(
     device_id: str, 
     payload: DeviceUpdate, 
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(get_current_tenant)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """Update an existing device."""
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     try:
         tenant_uuid = uuid.UUID(current_tenant)
         dev_id_uuid = uuid.UUID(device_id)
     except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="Invalid UUID")
 
-    result = await db.execute(
-        select(Device)
-        .options(joinedload(Device.customer), joinedload(Device.tenant))
-        .where(Device.id == dev_id_uuid, Device.tenant_id == tenant_uuid)
-    )
+    stmt = select(Device).options(joinedload(Device.customer), joinedload(Device.tenant)).where(Device.id == dev_id_uuid)
+    if not is_super:
+        stmt = stmt.where(Device.tenant_id == tenant_uuid)
+
+    result = await db.execute(stmt)
     device = result.scalars().first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -158,7 +161,13 @@ async def update_device(
         device.location = payload.location
     if payload.customer_id is not None:
         # Verify customer exists
-        customer_result = await db.execute(select(Customer).where(Customer.id == payload.customer_id))
+        customer_stmt = select(Customer).where(Customer.id == payload.customer_id)
+        if not is_super:
+            customer_stmt = customer_stmt.where(Customer.tenant_id == tenant_uuid)
+        else:
+            customer_stmt = customer_stmt.where(Customer.tenant_id == device.tenant_id)
+            
+        customer_result = await db.execute(customer_stmt)
         if not customer_result.scalars().first():
             raise HTTPException(status_code=404, detail="Customer not found")
         device.customer_id = payload.customer_id
@@ -176,20 +185,23 @@ async def update_device_status(
     device_id: str, 
     status: str, 
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(get_current_tenant)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """Archive or activate a device."""
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     try:
         tenant_uuid = uuid.UUID(current_tenant)
         dev_id_uuid = uuid.UUID(device_id)
     except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="Invalid UUID")
 
-    result = await db.execute(
-        select(Device)
-        .options(joinedload(Device.customer))
-        .where(Device.id == dev_id_uuid, Device.tenant_id == tenant_uuid)
-    )
+    stmt = select(Device).options(joinedload(Device.customer)).where(Device.id == dev_id_uuid)
+    if not is_super:
+        stmt = stmt.where(Device.tenant_id == tenant_uuid)
+
+    result = await db.execute(stmt)
     device = result.scalars().first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -209,19 +221,23 @@ async def update_device_status(
 async def delete_device(
     device_id: str, 
     db: AsyncSession = Depends(get_db),
-    current_tenant: str = Depends(get_current_tenant)
+    token_payload: dict = Depends(get_token_payload)
 ):
     """Delete a device and its related records."""
+    current_tenant = token_payload.get("tenant_id")
+    is_super = token_payload.get("role") in ["superadmin", "super_admin"]
+
     try:
         tenant_uuid = uuid.UUID(current_tenant)
         dev_id_uuid = uuid.UUID(device_id)
     except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="Invalid UUID")
 
-    result = await db.execute(
-        select(Device)
-        .where(Device.id == dev_id_uuid, Device.tenant_id == tenant_uuid)
-    )
+    stmt = select(Device).where(Device.id == dev_id_uuid)
+    if not is_super:
+        stmt = stmt.where(Device.tenant_id == tenant_uuid)
+
+    result = await db.execute(stmt)
     device = result.scalars().first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
