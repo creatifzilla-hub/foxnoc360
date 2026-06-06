@@ -7,11 +7,66 @@ from app.config import settings
 
 async def send_email_alert(subject: str, message: str, recipient: str, attachment: Optional[dict] = None):
     """
-    Sends an SMTP email alert asynchronously with optional attachment.
+    Sends an email alert. Uses Resend HTTP API if RESEND_API_KEY is configured,
+    otherwise falls back to SMTP.
     attachment format: {"filename": str, "content": bytes, "content_type": str}
     """
+    # ── Option A: Resend HTTP API (Bypasses Render SMTP port blocking) ──────
+    if settings.RESEND_API_KEY:
+        import base64
+        import httpx
+        
+        print(f"[EMAIL SERVICE] Sending email to {recipient} via Resend HTTP API...")
+        
+        headers = {
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        # Resend free tier sends from onboarding@resend.dev unless custom domain is verified
+        from_email = "onboarding@resend.dev"
+        # If the user configured a custom email and it doesn't look like the default configs:
+        if settings.EMAIL_FROM and not any(d in settings.EMAIL_FROM for d in ["example.com", "isp-monitor.local", "alerts@"]):
+            from_email = settings.EMAIL_FROM
+            
+        payload = {
+            "from": f"FoxNOC360 <{from_email}>",
+            "to": [recipient],
+            "subject": subject,
+            "text": message
+        }
+        
+        if attachment:
+            b64_content = base64.b64encode(attachment["content"]).decode("utf-8")
+            payload["attachments"] = [
+                {
+                    "filename": attachment["filename"],
+                    "content": b64_content
+                }
+            ]
+            
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    "https://api.resend.com/emails",
+                    json=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+            if res.status_code in [200, 201]:
+                print(f"[EMAIL SERVICE] Resend email sent successfully to {recipient}")
+                return
+            else:
+                error_msg = f"Resend API error ({res.status_code}): {res.text}"
+                print(f"[EMAIL SERVICE] {error_msg}")
+                raise Exception(error_msg)
+        except Exception as e:
+            print(f"[EMAIL SERVICE] Resend delivery failed: {e}")
+            raise e
+
+    # ── Option B: SMTP Fallback ──────────────────────────────────────────────
     if not settings.SMTP_HOST or not settings.SMTP_USERNAME:
-        print(f"[EMAIL SERVICE] Skipped email to {recipient}. SMTP not fully configured.")
+        print(f"[EMAIL SERVICE] Skipped email to {recipient}. SMTP/Resend not configured.")
         return
 
     def _send():

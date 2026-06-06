@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # ── Resend ───────────────────────────────────
+    RESEND_API_KEY: str = ""
+
     # ── CORS ─────────────────────────────────────
     ALLOWED_ORIGINS: List[str] = [
         "https://foxnoc360.vercel.app",
