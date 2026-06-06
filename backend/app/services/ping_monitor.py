@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 
 from app.database import AsyncSessionLocal
+from app.config import settings
 from app.models.tenant import Tenant
 from app.models.customer import Customer
 from app.models.device import Device
@@ -33,38 +34,67 @@ def utc_now():
 
 async def ping_device_async(ip_address: str) -> tuple[str, Optional[float], Optional[float]]:
     """
-    Pings an IP address asynchronously using the system ping utility.
-    Sends 5 packets to measure stability and packet loss.
-    Returns a tuple of (status: 'up' | 'down', latency_ms: float | None, loss_pct: float | None).
+    Probe a host.
+    * ICMP (default) – uses the system ping binary.
+    * TCP   – attempts a TCP connect to port 80 (or configurable PING_TCP_PORT).
+    Returns (status, latency_ms, packet_loss_pct)
     """
+import httpx
+
+# inside ping_device_async TCP block
+if getattr(settings, "PING_METHOD", "tcp").lower() == "tcp":
+    # ---- TCP probe -------------------------------------------------
+    port = getattr(settings, "PING_TCP_PORT", 80)
+    start = asyncio.get_event_loop().time()
     try:
-        # Send 5 packets with 1 second timeout for each
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(ip_address, port), timeout=2.0
+        )
+        latency = (asyncio.get_event_loop().time() - start) * 1000  # ms
+        writer.close()
+        await writer.wait_closed()
+        return "up", latency, 0.0
+    except Exception as tcp_err:
+        logger.debug(f"TCP probe failed for {ip_address}:{port}: {tcp_err}")
+        # ---- HTTP probe fallback ------------------------------------
+        try:
+            http_start = asyncio.get_event_loop().time()
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                # plain HTTP request; ignore SSL verification for raw IPs
+                resp = await client.get(f"http://{ip_address}", follow_redirects=False)
+            http_latency = (asyncio.get_event_loop().time() - http_start) * 1000
+            if resp.status_code < 400:
+                return "up", http_latency, 0.0
+        except Exception as http_err:
+            logger.debug(f"HTTP fallback failed for {ip_address}: {http_err}")
+        return "down", None, 100.0
+        # ----------------------------------------------------------------
+else:
+    # ---- Existing ICMP implementation (unchanged) -------------------
+    try:
         process = await asyncio.create_subprocess_exec(
             "ping", "-c", "5", "-W", "1", ip_address,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await process.communicate()
+        stdout, _ = await process.communicate()
         output = stdout.decode("utf-8")
 
-        # Extract Packet Loss
         loss_match = LOSS_REGEX.search(output)
         loss_pct = float(loss_match.group(1)) if loss_match else None
 
-        # Extract Latency
         summary_match = SUMMARY_REGEX.search(output)
         latency_ms = float(summary_match.group(1)) if summary_match else None
-        
-        # Determine Status
-        # If we received ANY packets, we count it as 'up' for the basic status line
+
         if process.returncode == 0 or (loss_pct is not None and loss_pct < 100):
             return "up", latency_ms, loss_pct
         else:
             return "down", None, 100.0
-
     except Exception as e:
         logger.error(f"Error pinging {ip_address}: {e}")
         return "down", None, 100.0
+        # ----------------------------------------------------------------
+
 
 
 async def _run_ping_task(device: Device, sem: asyncio.Semaphore) -> tuple[Device, str, Optional[float], Optional[float]]:

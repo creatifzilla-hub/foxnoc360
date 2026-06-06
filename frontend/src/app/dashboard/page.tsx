@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Icons } from "./components/Sidebar";
 import DashboardCharts from "./components/DashboardCharts";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 import DevicesTable from "./components/DevicesTable";
 import { useSubscription } from "../hooks/useSubscription";
 import { useRole } from "../hooks/useRole";

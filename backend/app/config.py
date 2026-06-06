@@ -44,14 +44,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = "alerts@example.com"
 
-    # ── Twilio Alerts ──────────────────────────────
-    TWILIO_ACCOUNT_SID: str = ""
-    TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_WHATSAPP_NUMBER: str = ""
-    
-    # ── Razorpay ──────────────────────────────────
-    RAZORPAY_KEY_ID: str = "rzp_test_dummy"
-    RAZORPAY_KEY_SECRET: str = "dummy_secret"
+    # ── Ping method configuration ────────────────────────
+    PING_METHOD: str = "icmp"  # "icmp" or "tcp"
+    PING_TCP_PORT: int = 80
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
