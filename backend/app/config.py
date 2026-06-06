@@ -27,6 +27,9 @@ class Settings(BaseSettings):
 
     # ── Resend ───────────────────────────────────
     RESEND_API_KEY: str = ""
+    # ── Razorpay ───────────────────────────────────
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
 
     # ── CORS ─────────────────────────────────────
     ALLOWED_ORIGINS: List[str] = [
