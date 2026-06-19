@@ -85,11 +85,8 @@ from app.services.auth import get_token_payload
 async def get_dashboard(
     period: int = 7,
     db: AsyncSession = Depends(get_db),
-    payload: Optional[dict] = None,
+    payload: dict = Depends(get_token_payload),
 ):
-    # Treat unauthenticated requests as superadmin (public Vercel view)
-    if payload is None:
-        payload = {"tenant_id": None, "role": "superadmin"}
     """Return dashboard statistics tracking device statuses scoped to user or global for Superadmin."""
     
     current_tenant = payload.get("tenant_id")
@@ -226,11 +223,8 @@ async def get_dashboard(
 @router.get("/devices-table", response_model=list[DeviceTableResponse])
 async def get_devices_table(
     db: AsyncSession = Depends(get_db),
-    payload: Optional[dict] = None,
+    payload: dict = Depends(get_token_payload),
 ):
-    # Public access fallback – treat as superadmin
-    if payload is None:
-        payload = {"tenant_id": None, "role": "superadmin"}
     """Return device monitoring table joined with latest ping logs, sorted globally by latest check-in."""
     current_tenant = payload.get("tenant_id")
     is_super = payload.get("role") in ["superadmin", "super_admin"]
