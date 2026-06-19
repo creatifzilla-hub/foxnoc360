@@ -72,8 +72,9 @@ export default function ActionMenu({ actions }: ActionMenuProps) {
           <button
             key={idx}
             disabled={action.disabled}
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               if (action.disabled) return;
               action.onClick();
               setIsOpen(false);
