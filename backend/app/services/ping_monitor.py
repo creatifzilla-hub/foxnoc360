@@ -36,7 +36,7 @@ def utc_now():
 async def ping_device_async(ip_address: str) -> tuple[str, Optional[float], Optional[float]]:
     """
     Probe a host.
-    * TCP (default) – attempts a TCP connect to port 80 (or configurable PING_TCP_PORT).
+    * TCP (multi-port) – attempts TCP connect to common ports (80, 443, 22).
     * HTTP fallback  – fires an HTTP GET if TCP fails.
     * ICMP           – uses the system ping binary if PING_METHOD=icmp.
     Returns (status, latency_ms, packet_loss_pct)
@@ -44,28 +44,47 @@ async def ping_device_async(ip_address: str) -> tuple[str, Optional[float], Opti
     ping_method = getattr(settings, "PING_METHOD", "tcp").lower()
 
     if ping_method == "tcp":
-        # ---- TCP probe -------------------------------------------------
-        port = getattr(settings, "PING_TCP_PORT", 80)
-        start = asyncio.get_event_loop().time()
-        try:
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(ip_address, port), timeout=2.0
-            )
-            latency = (asyncio.get_event_loop().time() - start) * 1000  # ms
-            writer.close()
-            await writer.wait_closed()
-            return "up", latency, 0.0
-        except Exception as tcp_err:
-            logger.debug(f"TCP probe failed for {ip_address}:{port}: {tcp_err}")
+        # ---- Concurrent multi-port TCP probe --------------------------
+        # Try common network-device ports all at once. If ANY responds
+        # within the timeout, the device is considered UP.
+        # Covers: HTTP(80), HTTPS(443), SSH(22), Telnet(23), Alt-HTTP(8080)
+        PROBE_PORTS = [22, 23, 80, 443, 8080]
+        configured_port = getattr(settings, "PING_TCP_PORT", 80)
+        if configured_port not in PROBE_PORTS:
+            PROBE_PORTS.insert(0, configured_port)
 
-        # ---- HTTP probe fallback ------------------------------------
+        loop = asyncio.get_event_loop()
+        probe_start = loop.time()
+
+        async def try_port(p: int):
+            t0 = loop.time()
+            try:
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(ip_address, p), timeout=2.0
+                )
+                lat = (loop.time() - t0) * 1000
+                writer.close()
+                try:
+                    await writer.wait_closed()
+                except Exception:
+                    pass
+                return lat  # success → return latency
+            except Exception:
+                return None  # failure
+
+        port_results = await asyncio.gather(*[try_port(p) for p in PROBE_PORTS])
+        for lat in port_results:
+            if lat is not None:
+                return "up", lat, 0.0
+
+        # ---- HTTP probe fallback (any response = reachable) ------------
         try:
-            http_start = asyncio.get_event_loop().time()
+            http_start = loop.time()
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"http://{ip_address}", follow_redirects=False)
-            http_latency = (asyncio.get_event_loop().time() - http_start) * 1000
-            if resp.status_code < 400:
-                return "up", http_latency, 0.0
+            http_latency = (loop.time() - http_start) * 1000
+            # ANY response (even 4xx/5xx) proves the host is reachable
+            return "up", http_latency, 0.0
         except Exception as http_err:
             logger.debug(f"HTTP fallback failed for {ip_address}: {http_err}")
 
