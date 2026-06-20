@@ -48,7 +48,7 @@ async def ping_device_async(ip_address: str) -> tuple[str, Optional[float], Opti
         # Try common network-device ports all at once. If ANY responds
         # within the timeout, the device is considered UP.
         # Covers: HTTP(80), HTTPS(443), SSH(22), Telnet(23), Alt-HTTP(8080)
-        PROBE_PORTS = [22, 23, 80, 443, 8080]
+        PROBE_PORTS = [22, 23, 53, 80, 443, 8080]
         configured_port = getattr(settings, "PING_TCP_PORT", 80)
         if configured_port not in PROBE_PORTS:
             PROBE_PORTS.insert(0, configured_port)
