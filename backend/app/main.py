@@ -69,17 +69,28 @@ async def lifespan(app: FastAPI):
 
     # Background task for ICMP/Ping Monitoring
     from app.services.ping_monitor import monitor_devices_async
+    import traceback
+
     async def run_periodic_pings():
-        await asyncio.sleep(20) # Wait for server to stabilize
-        while True:
+        """Crash-proof ping loop. Restarts itself if it ever crashes."""
+        await asyncio.sleep(20)  # Wait for server to stabilize
+        print("🏓 Ping monitor task started.")
+        while True:  # Outer restart loop — if inner loop crashes, restart
             try:
-                print("🏓 Starting Ping monitor cycle...")
-                await monitor_devices_async()
-                print("✅ Ping monitor cycle finished.")
-            except Exception as e:
-                print(f"❌ Error in periodic ping: {e}")
-            await asyncio.sleep(30) # Check every 30 seconds
-    
+                while True:  # Inner operational loop
+                    try:
+                        print("🏓 Starting Ping monitor cycle...")
+                        await monitor_devices_async()
+                        print("✅ Ping monitor cycle finished.")
+                    except Exception as e:
+                        print(f"❌ Ping monitor cycle error: {e}")
+                        traceback.print_exc()
+                    await asyncio.sleep(30)  # Always sleep between cycles
+            except Exception as fatal:
+                print(f"💀 Ping monitor CRASHED: {fatal}. Restarting in 5s...")
+                traceback.print_exc()
+                await asyncio.sleep(5)  # Brief pause before restart
+
     asyncio.create_task(run_periodic_pings())
 
     yield  # App runs here
