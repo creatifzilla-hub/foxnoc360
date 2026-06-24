@@ -712,7 +712,7 @@ export default function TenantsPage() {
       {changePasswordModal && (
         <FormModal
           title={`Change Password for ${changePasswordModal.name}`}
-          isOpen={true}
+          open={true}
           onClose={() => setChangePasswordModal(null)}
           onSubmit={handleChangePasswordSubmit}
           submitText={changingPassword ? "Saving..." : "Save Password"}
