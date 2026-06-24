@@ -13,6 +13,7 @@ interface Plan {
   id: string;
   name: string;
   max_devices: number;
+  max_customers: number;
   max_users: number;
   snmp_enabled: boolean;
   sla_reports: boolean;
@@ -23,6 +24,8 @@ interface UsageStats {
   plan_name: string | null;
   devices_used: number;
   devices_limit: number;
+  customers_used: number;
+  customers_limit: number;
   users_used: number;
   users_limit: number;
   snmp_enabled: boolean;
@@ -43,6 +46,7 @@ interface TenantPlan {
 interface PlanFormData {
   name: string;
   max_devices: number;
+  max_customers: number;
   max_users: number;
   snmp_enabled: boolean;
   sla_reports: boolean;
@@ -702,7 +706,7 @@ export default function SubscriptionsPage() {
                 </span>
               )}
             </h2>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div>
                 <div className="flex justify-between text-sm mb-2" style={{ color: "var(--text-secondary)" }}>
                   <span>Devices</span>
@@ -715,10 +719,19 @@ export default function SubscriptionsPage() {
               <div>
                 <div className="flex justify-between text-sm mb-2" style={{ color: "var(--text-secondary)" }}>
                   <span>Customers</span>
+                  <span>{usage.customers_used} / {usage.customers_limit}</span>
+                </div>
+                <div className="w-full rounded-full h-2.5" style={{ background: "var(--bg-elevated)" }}>
+                  <div className="h-2.5 rounded-full transition-all duration-700" style={{ width: `${usagePct(usage.customers_used, usage.customers_limit)}%`, background: "#a855f7" }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-sm mb-2" style={{ color: "var(--text-secondary)" }}>
+                  <span>Team Users</span>
                   <span>{usage.users_used} / {usage.users_limit}</span>
                 </div>
                 <div className="w-full rounded-full h-2.5" style={{ background: "var(--bg-elevated)" }}>
-                  <div className="h-2.5 rounded-full transition-all duration-700" style={{ width: `${usagePct(usage.users_used, usage.users_limit)}%`, background: "#a855f7" }} />
+                  <div className="h-2.5 rounded-full transition-all duration-700" style={{ width: `${usagePct(usage.users_used, usage.users_limit)}%`, background: "#10b981" }} />
                 </div>
               </div>
             </div>
