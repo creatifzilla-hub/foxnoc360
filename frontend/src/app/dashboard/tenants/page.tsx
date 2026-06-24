@@ -715,7 +715,8 @@ export default function TenantsPage() {
           open={true}
           onClose={() => setChangePasswordModal(null)}
           onSubmit={handleChangePasswordSubmit}
-          submitText={changingPassword ? "Saving..." : "Save Password"}
+          submitLabel="Save Password"
+          loading={changingPassword}
         >
           <FormField label="New Password">
             <input
