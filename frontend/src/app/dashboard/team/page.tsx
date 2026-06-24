@@ -38,7 +38,7 @@ export default function TeamManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState<Partial<UserTeamMember & { password?: string }>>({});
+  const [form, setForm] = useState<Partial<UserTeamMember & { password?: string, first_name?: string, last_name?: string }>>({});
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
@@ -94,7 +94,12 @@ export default function TeamManagementPage() {
       const url = isEditing ? `${API_BASE}/team/users/${form.id}` : `${API_BASE}/team/users`;
       const method = isEditing ? "PUT" : "POST";
 
-      const payload = { ...form };
+      const payload: any = { ...form };
+      if (payload.first_name || payload.last_name) {
+          payload.full_name = `${payload.first_name || ''} ${payload.last_name || ''}`.trim();
+      }
+      delete payload.first_name;
+      delete payload.last_name;
       if (!payload.tenant_id) delete payload.tenant_id;
 
       const res = await fetch(url, {
@@ -122,6 +127,8 @@ export default function TeamManagementPage() {
           role: "Sales Agent",
           status: "active",
           tenant_id: "",
+          first_name: "",
+          last_name: "",
           permissions: {
               allowed_modules: ["dashboard", "sales"],
               assigned_leads_only: false
@@ -132,9 +139,12 @@ export default function TeamManagementPage() {
   };
 
   const openEditModal = (u: UserTeamMember) => {
+      const names = (u.full_name || '').split(' ');
       setForm({
           ...u,
-          password: "" // Don't show existing hash
+          password: "", // Don't show existing hash
+          first_name: names[0] || '',
+          last_name: names.slice(1).join(' ') || ''
       });
       setIsEditing(true);
       setShowModal(true);
@@ -350,9 +360,14 @@ export default function TeamManagementPage() {
                      </select>
                   </FormField>
               )}
-              <FormField label="Person Full Name">
-                 <input required value={form.full_name || ""} onChange={e => setForm({...form, full_name: e.target.value})} className={inputCls} style={inputStyle} placeholder="e.g. John Doe" />
-              </FormField>
+              <div className="grid grid-cols-2 gap-4">
+                  <FormField label="First Name">
+                     <input required value={form.first_name || ""} onChange={e => setForm({...form, first_name: e.target.value})} className={inputCls} style={inputStyle} placeholder="e.g. John" />
+                  </FormField>
+                  <FormField label="Last Name">
+                     <input required value={form.last_name || ""} onChange={e => setForm({...form, last_name: e.target.value})} className={inputCls} style={inputStyle} placeholder="e.g. Doe" />
+                  </FormField>
+              </div>
               <FormField label="Email Account (Login ID)">
                  <input required type="email" value={form.email || ""} onChange={e => setForm({...form, email: e.target.value})} className={inputCls} style={inputStyle} disabled={isEditing} placeholder="user@example.com" />
               </FormField>
@@ -389,23 +404,7 @@ export default function TeamManagementPage() {
                     </label>
                  ))}
               </div>
-              <div className="pt-4 mt-4 border-t" style={{ borderColor: "var(--bg-border)" }}>
-                 <label className="flex items-center gap-3 cursor-pointer">
-                    <input 
-                        type="checkbox" 
-                        checked={!!form.permissions?.assigned_leads_only} 
-                        onChange={(e) => setForm({
-                            ...form, 
-                            permissions: { 
-                                allowed_modules: form.permissions?.allowed_modules || [], 
-                                assigned_leads_only: e.target.checked 
-                            }
-                        })}
-                        className="w-4 h-4 rounded accent-orange-500" 
-                    />
-                    <span className="text-xs font-bold text-orange-500">Sales Restricted: My assigned leads only</span>
-                 </label>
-              </div>
+              <div className="pb-2"></div>
            </div>
         </div>
       </FormModal>
