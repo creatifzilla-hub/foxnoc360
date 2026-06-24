@@ -103,7 +103,8 @@ function PlanCard({
       <ul className="space-y-2 mb-6 flex-1">
         {[
           { label: `${plan.max_devices.toLocaleString()} Devices`, ok: true },
-          { label: `${plan.max_users} Customers`, ok: true },
+          { label: `${plan.max_customers.toLocaleString()} Customers`, ok: true },
+          { label: `${plan.max_users} Team Users`, ok: true },
           { label: "PDF SLA Reports", ok: plan.sla_reports },
           { label: "Email & WhatsApp Alerts", ok: true },
         ].map((f) => (
@@ -177,6 +178,7 @@ export default function SubscriptionsPage() {
   const [form, setForm] = useState<PlanFormData>({
     name: "",
     max_devices: 50,
+    max_customers: 10,
     max_users: 5,
     snmp_enabled: false,
     sla_reports: false,
@@ -400,13 +402,13 @@ export default function SubscriptionsPage() {
 
   const handleOpenCreateModal = () => {
     setEditingPlanId(null);
-    setForm({ name: "", max_devices: 50, max_users: 5, snmp_enabled: false, sla_reports: false, price_per_month: 0.0 });
+    setForm({ name: "", max_devices: 50, max_customers: 10, max_users: 5, snmp_enabled: false, sla_reports: false, price_per_month: 0.0 });
     setShowModal(true);
   };
 
   const handleOpenEditModal = (plan: Plan) => {
     setEditingPlanId(plan.id);
-    setForm({ name: plan.name, max_devices: plan.max_devices, max_users: plan.max_users, snmp_enabled: plan.snmp_enabled, sla_reports: plan.sla_reports, price_per_month: plan.price_per_month });
+    setForm({ name: plan.name, max_devices: plan.max_devices, max_customers: plan.max_customers, max_users: plan.max_users, snmp_enabled: plan.snmp_enabled, sla_reports: plan.sla_reports, price_per_month: plan.price_per_month });
     setShowModal(true);
   };
 
@@ -844,7 +846,8 @@ export default function SubscriptionsPage() {
                   <ul className="space-y-2 mb-6 flex-1">
                     {[
                       { label: `${plan.max_devices.toLocaleString()} Devices`, ok: true },
-                      { label: `${plan.max_users} Customers`, ok: true },
+                      { label: `${plan.max_customers.toLocaleString()} Customers`, ok: true },
+                      { label: `${plan.max_users} Team Users`, ok: true },
                       { label: "PDF SLA Reports", ok: plan.sla_reports },
                       { label: "Email & WhatsApp Alerts", ok: true },
                     ].map((f) => (
@@ -1028,13 +1031,17 @@ export default function SubscriptionsPage() {
                 <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl px-4 py-2.5 outline-none transition-colors" style={{ background: "var(--bg-base)", border: "1px solid var(--bg-border)", color: "var(--text-primary)" }} placeholder="e.g. Enterprise" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Max Devices</label>
                   <input type="number" min="0" required value={form.max_devices} onChange={(e) => setForm({ ...form, max_devices: parseInt(e.target.value) || 0 })} className="w-full rounded-xl px-4 py-2.5 outline-none transition-colors" style={{ background: "var(--bg-base)", border: "1px solid var(--bg-border)", color: "var(--text-primary)" }} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Max Customers</label>
+                  <input type="number" min="0" required value={form.max_customers} onChange={(e) => setForm({ ...form, max_customers: parseInt(e.target.value) || 0 })} className="w-full rounded-xl px-4 py-2.5 outline-none transition-colors" style={{ background: "var(--bg-base)", border: "1px solid var(--bg-border)", color: "var(--text-primary)" }} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>Max Users</label>
                   <input type="number" min="0" required value={form.max_users} onChange={(e) => setForm({ ...form, max_users: parseInt(e.target.value) || 0 })} className="w-full rounded-xl px-4 py-2.5 outline-none transition-colors" style={{ background: "var(--bg-base)", border: "1px solid var(--bg-border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
