@@ -20,6 +20,9 @@ class BulkDeletePayload(BaseModel):
 
 router = APIRouter(prefix="/team", tags=["Team Management"])
 
+from sqlalchemy.orm import selectinload
+import uuid as uuid_lib
+
 @router.get("/users", response_model=List[UserResponse])
 async def list_team_members(
     tenant_id: Optional[UUID] = None,
@@ -33,25 +36,19 @@ async def list_team_members(
     if current_user.role in ["superadmin", "super_admin"]:
         target_tenant = tenant_id if tenant_id else None
         
-    query = select(User)
+    query = select(User).options(selectinload(User.permissions))
     if target_tenant:
+        if isinstance(target_tenant, str):
+            try:
+                target_tenant = uuid_lib.UUID(target_tenant)
+            except ValueError:
+                pass
         query = query.where(User.tenant_id == target_tenant)
     
     result = await db.execute(query.order_by(User.created_at.desc()))
     users = result.scalars().all()
     
-    # Enrich users with permissions
-    response_users = []
-    for u in users:
-        # UserPermission is a backref, but it's easier to explicitly select in async
-        perm_result = await db.execute(select(UserPermission).where(UserPermission.user_id == u.id))
-        perms = perm_result.scalars().first()
-        
-        # Add a placeholder if missing for easier frontend consumption
-        u.permissions = perms if perms else PermissionSchema(allowed_modules=["dashboard"])
-        response_users.append(u)
-        
-    return response_users
+    return users
 
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_team_member(
@@ -128,11 +125,10 @@ async def create_team_member(
     db.add(new_perms)
     
     await db.commit()
-    await db.refresh(new_user)
     
-    # Manual enrichment for the response model
-    new_user.permissions = perms_data
-    return new_user
+    # Re-fetch with permissions explicitly loaded
+    result = await db.execute(select(User).options(selectinload(User.permissions)).where(User.id == new_user.id))
+    return result.scalars().first()
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 async def update_team_member(
@@ -175,12 +171,10 @@ async def update_team_member(
             db.add(new_perms)
 
     await db.commit()
-    await db.refresh(user)
     
-    # Enrich for response
-    p_res = await db.execute(select(UserPermission).where(UserPermission.user_id == user.id))
-    user.permissions = p_res.scalars().first()
-    return user
+    # Re-fetch with permissions explicitly loaded
+    updated_result = await db.execute(select(User).options(selectinload(User.permissions)).where(User.id == user.id))
+    return updated_result.scalars().first()
 
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_team_member(
