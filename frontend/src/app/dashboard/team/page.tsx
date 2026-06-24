@@ -39,6 +39,7 @@ export default function TeamManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<Partial<UserTeamMember & { password?: string }>>({});
+  const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -87,6 +88,7 @@ export default function TeamManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
       const token = localStorage.getItem("token");
       const url = isEditing ? `${API_BASE}/team/users/${form.id}` : `${API_BASE}/team/users`;
@@ -112,6 +114,7 @@ export default function TeamManagementPage() {
           error(msg || "Failed to save user.");
       }
     } catch (err) { console.error(err); error("An error occurred during submission."); }
+    finally { setSaving(false); }
   };
 
   const openCreateModal = () => {
@@ -329,6 +332,7 @@ export default function TeamManagementPage() {
         onSubmit={handleSubmit}
         submitLabel={isEditing ? "Save Configuration" : "Create User"}
         width={720}
+        loading={saving}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="space-y-4">

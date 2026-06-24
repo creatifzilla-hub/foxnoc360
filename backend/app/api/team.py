@@ -28,10 +28,10 @@ async def list_team_members(
     current_tenant: str = Depends(get_current_tenant)
 ):
     """List all team members for the current ISP, including their module-level permissions."""
-    # Superadmins can filter or see their own
+    # Superadmins can filter or see all
     target_tenant = current_tenant
-    if current_user.role in ["superadmin", "super_admin"] and tenant_id:
-        target_tenant = tenant_id
+    if current_user.role in ["superadmin", "super_admin"]:
+        target_tenant = tenant_id if tenant_id else None
         
     query = select(User)
     if target_tenant:
