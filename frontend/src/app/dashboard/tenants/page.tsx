@@ -63,6 +63,11 @@ export default function TenantsPage() {
   const [tenantCustomers, setTenantCustomers] = useState<{ id: string, name: string, contact_email: string, ips: string[] }[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
 
+  // Change Password Modal State
+  const [changePasswordModal, setChangePasswordModal] = useState<{id: string, name: string} | null>(null);
+  const [changePasswordForm, setChangePasswordForm] = useState({ new_password: "", confirm_password: "" });
+  const [changingPassword, setChangingPassword] = useState(false);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -130,6 +135,48 @@ export default function TenantsPage() {
     } catch (e) {
       console.error(e);
       alert("A network error occurred.");
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changePasswordModal) return;
+    
+    if (changePasswordForm.new_password !== changePasswordForm.confirm_password) {
+      alert("Passwords do not match!");
+      return;
+    }
+    if (!/^(?=.*[0-9])(?=.*[a-zA-Z]).{8,}$/.test(changePasswordForm.new_password)) {
+      alert("Password must be at least 8 characters long and contain both letters and numbers.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/tenants/${changePasswordModal.id}/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ new_password: changePasswordForm.new_password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Failed to change password: ${errData.detail || "Unknown error"}`);
+        return;
+      }
+
+      setChangePasswordModal(null);
+      setChangePasswordForm({ new_password: "", confirm_password: "" });
+      alert("Password successfully changed!");
+    } catch (e) {
+      console.error(e);
+      alert("A network error occurred.");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -492,6 +539,7 @@ export default function TenantsPage() {
                     <td className="px-6 py-4 text-right sticky right-0 z-10" style={{ background: "var(--bg-surface)", borderLeft: "1px solid var(--bg-border)" }}>
                       <ActionMenu
                         actions={[
+                          { label: "Change Password", onClick: () => { setChangePasswordModal({ id: t.id, name: t.name }); setChangePasswordForm({ new_password: "", confirm_password: "" }); } },
                           { label: "Edit", onClick: () => openEditModal(t) },
                           { 
                             label: t.status === "archived" ? "Activate" : "Archive", 
@@ -660,6 +708,53 @@ export default function TenantsPage() {
           </>
         )}
       </FormModal>
+
+      {changePasswordModal && (
+        <FormModal
+          title={`Change Password for ${changePasswordModal.name}`}
+          isOpen={true}
+          onClose={() => setChangePasswordModal(null)}
+          onSubmit={handleChangePasswordSubmit}
+          submitText={changingPassword ? "Saving..." : "Save Password"}
+        >
+          <FormField label="New Password">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              className={inputCls}
+              style={inputStyle}
+              value={changePasswordForm.new_password}
+              onChange={(e) => setChangePasswordForm({ ...changePasswordForm, new_password: e.target.value })}
+              placeholder="••••••••"
+            />
+          </FormField>
+          <FormField label="Confirm New Password">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              required
+              className={inputCls}
+              style={inputStyle}
+              value={changePasswordForm.confirm_password}
+              onChange={(e) => setChangePasswordForm({ ...changePasswordForm, confirm_password: e.target.value })}
+              placeholder="••••••••"
+            />
+          </FormField>
+          <div className="flex items-center gap-2 mt-2">
+            <input 
+              type="checkbox" 
+              id="show-passwords" 
+              checked={showPassword}
+              onChange={(e) => {
+                setShowPassword(e.target.checked);
+                setShowConfirmPassword(e.target.checked);
+              }}
+              className="rounded" 
+            />
+            <label htmlFor="show-passwords" className="text-xs" style={{ color: "var(--text-secondary)" }}>Show Passwords</label>
+          </div>
+        </FormModal>
+      )}
+
       {confirmDialog && (
         <ConfirmDialog
           open={confirmDialog.open}

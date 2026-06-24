@@ -247,3 +247,28 @@ async def delete_tenant(tenant_id: UUID, db: AsyncSession = Depends(get_db)):
     await db.delete(tenant)
     await db.commit()
     return None
+
+class TenantPasswordUpdate(BaseModel):
+    new_password: str
+
+@router.put("/{tenant_id}/password")
+async def update_tenant_password(
+    tenant_id: UUID,
+    payload: TenantPasswordUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a tenant's admin password directly. Superadmin only."""
+    if current_user.role not in ["superadmin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Superadmin access required.")
+        
+    result = await db.execute(select(User).where(User.tenant_id == tenant_id, User.role == "isp_admin"))
+    tenant_admin = result.scalars().first()
+    
+    if not tenant_admin:
+        raise HTTPException(status_code=404, detail="ISP Admin user not found for this tenant")
+        
+    tenant_admin.password_hash = hash_password(payload.new_password)
+    await db.commit()
+    
+    return {"message": "Tenant password successfully updated"}

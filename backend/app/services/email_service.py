@@ -148,3 +148,24 @@ async def send_sla_report_email(recipient: str, customer_name: str, device_name:
         "content_type": "application/pdf"
     }
     await send_email_alert(subject, body, recipient, attachment=attachment)
+
+async def send_password_reset_email(recipient: str, reset_link: str):
+    """
+    Sends a password reset link to the user.
+    """
+    subject = "FoxNOC360 - Password Reset Request"
+    body = f"""
+    Hello,
+
+    We received a request to reset your password.
+    Please click the link below to set a new password:
+
+    {reset_link}
+
+    If you did not request this, please ignore this email.
+    The link will expire in 30 minutes.
+
+    Best regards,
+    The FoxNOC360 Team
+    """
+    await send_email_alert(subject, body, recipient)
