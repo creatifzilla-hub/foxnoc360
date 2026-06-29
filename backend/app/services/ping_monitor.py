@@ -94,7 +94,7 @@ async def ping_device_async(ip_address: str) -> tuple[str, Optional[float], Opti
         # ---- ICMP implementation ------------------------------------
         try:
             process = await asyncio.create_subprocess_exec(
-                "ping", "-c", "5", "-W", "1", ip_address,
+                "ping", "-c", "5", ip_address,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

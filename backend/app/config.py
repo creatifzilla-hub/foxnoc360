@@ -36,11 +36,12 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_WHATSAPP_NUMBER: str = ""
 
-    # ── CORS ─────────────────────────────────────
     ALLOWED_ORIGINS: List[str] = [
         "https://foxnoc360.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
         "http://localhost:5173",
         "http://127.0.0.1:5173"
     ]
@@ -53,7 +54,7 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "alerts@example.com"
 
     # ── Ping method configuration ────────────────────────
-    PING_METHOD: str = "tcp"  # "icmp" or "tcp"
+    PING_METHOD: str = "icmp"  # "icmp" or "tcp"
     PING_TCP_PORT: int = 80
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
