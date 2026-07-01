@@ -7,7 +7,7 @@ import FormModal, { FormField, inputCls, inputStyle } from ".//FormModal";
 import Btn, { BtnIcons } from ".//Btn";
 import ActionMenu from ".//ActionMenu";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.foxnoc360.com/api/v1";
 
 interface Lead {
   id: string;

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Icons } from "../components/Sidebar";
 import { useRole } from "../../hooks/useRole";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.foxnoc360.com/api/v1";
 
 interface BillingRecord {
   id: string;

@@ -9,7 +9,7 @@ import FormModal, { FormField, inputCls, inputStyle } from "../components/FormMo
 import Btn, { BtnIcons } from "../components/Btn";
 import ActionMenu from "../components/ActionMenu";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.foxnoc360.com/api/v1";
 
 interface UserTeamMember {
   id: string;
