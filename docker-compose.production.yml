@@ -38,7 +38,7 @@ services:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@db:5432/${POSTGRES_DB:-isp_monitor}
       - REDIS_URL=redis://redis:6379/0
-      - ALLOWED_ORIGINS=["https://${FRONTEND_DOMAIN:-foxnoc360.com}","https://${BACKEND_DOMAIN:-api.foxnoc360.com}"]
+      - ALLOWED_ORIGINS=["https://server.foxnoc360.com","https://api.foxnoc360.com","http://server.foxnoc360.com","http://api.foxnoc360.com"]
       - PING_METHOD=icmp
     depends_on:
       db:
@@ -51,12 +51,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://${BACKEND_DOMAIN:-api.foxnoc360.com}/api/v1
+        - NEXT_PUBLIC_API_URL=https://api.foxnoc360.com/api/v1
     restart: always
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=https://${BACKEND_DOMAIN:-api.foxnoc360.com}/api/v1
+      - NEXT_PUBLIC_API_URL=https://api.foxnoc360.com/api/v1
     depends_on:
       - backend
 
