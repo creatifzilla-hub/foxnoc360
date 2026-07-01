@@ -1,12 +1,13 @@
 import asyncio
 import uuid
+import bcrypt
 from datetime import datetime, timezone
 from app.database import AsyncSessionLocal
 from app.models.tenant import Tenant
 from app.models.user import User
-from passlib.context import CryptContext
 
-pwd = CryptContext(schemes=["bcrypt"])
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 async def seed():
     async with AsyncSessionLocal() as db:
@@ -24,7 +25,7 @@ async def seed():
             id=uuid.uuid4(),
             tenant_id=tenant.id,
             email="admin@foxnoc360.com",
-            password_hash=pwd.hash("Admin@123"),
+            password_hash=hash_password("Admin@123"),
             role="superadmin",
             status="active",
             created_at=datetime.now(timezone.utc)
