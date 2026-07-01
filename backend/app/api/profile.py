@@ -55,7 +55,7 @@ class ProfileUpdate(BaseModel):
     email_alerts: Optional[bool] = None
     whatsapp_alerts: Optional[bool] = None
 
-@router.get(""), response_model=ProfileResponse)
+@router.get("", response_model=ProfileResponse)
 async def get_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -100,7 +100,7 @@ async def get_profile(
         whatsapp_alerts=current_user.whatsapp_alerts if current_user.whatsapp_alerts is not None else True
     )
 
-@router.put(""))
+@router.put("")
 async def update_profile(
     payload: ProfileUpdate,
     current_user: User = Depends(get_current_user),

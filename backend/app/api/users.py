@@ -11,7 +11,7 @@ from app.services.auth import hash_password
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post(""), response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     """Register a new user under a specific tenant."""
     # Verify tenant exists
@@ -42,7 +42,7 @@ async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     return user
 
 
-@router.get(""), response_model=list[UserResponse])
+@router.get("", response_model=list[UserResponse])
 async def list_users(db: AsyncSession = Depends(get_db)):
     """Return all users across the system."""
     result = await db.execute(select(User).order_by(User.created_at.desc()))

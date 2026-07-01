@@ -23,7 +23,7 @@ class BulkDeletePayload(BaseModel):
 
 router = APIRouter(prefix="/tenants", tags=["Tenants"])
 
-@router.post(""), response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
 async def create_tenant(
     payload: TenantCreate, 
     background_tasks: BackgroundTasks,
@@ -100,7 +100,7 @@ async def create_tenant(
     return tenant
 
 
-@router.get(""), response_model=list[TenantResponse])
+@router.get("", response_model=list[TenantResponse])
 async def list_tenants(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
