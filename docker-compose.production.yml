@@ -40,6 +40,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - ALLOWED_ORIGINS=["https://server.foxnoc360.com","https://api.foxnoc360.com","http://server.foxnoc360.com","http://api.foxnoc360.com"]
       - PING_METHOD=icmp
+      - RAZORPAY_KEY_ID=rzp_test_T8G6J9js0lJXmE
+      - RAZORPAY_KEY_SECRET=dTqeNcytPXCgGon09ghP00uO
     depends_on:
       db:
         condition: service_healthy
