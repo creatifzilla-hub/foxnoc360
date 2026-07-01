@@ -67,9 +67,6 @@ cd "$(dirname "$0")"
 
 # We must map port 3000 and 8000 to the host so Nginx can proxy to them
 export COMPOSE_FILE=docker-compose.production.yml
-# Expose ports for Nginx
-sed -i '/backend:/a \    ports:\n      - "127.0.0.1:8000:8000"' docker-compose.production.yml
-sed -i '/frontend:/a \    ports:\n      - "127.0.0.1:3000:3000"' docker-compose.production.yml
 
 docker-compose up -d --build
 

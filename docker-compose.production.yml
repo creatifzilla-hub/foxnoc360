@@ -32,6 +32,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+    ports:
+      - "127.0.0.1:8000:8000"
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@db:5432/${POSTGRES_DB:-isp_monitor}
@@ -49,6 +51,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=https://${BACKEND_DOMAIN:-api.foxnoc360.com}/api/v1
     depends_on:
