@@ -14,7 +14,12 @@ echo "🚀 Starting FoxNOC360 Deployment on Hostinger VPS..."
 # 1. System Updates & Dependencies
 echo "📦 Installing required dependencies..."
 apt-get update
-apt-get install -y docker.io docker-compose git nginx certbot python3-certbot-nginx
+apt-get install -y docker.io nginx certbot python3-certbot-nginx curl
+apt-get remove -y docker-compose || true
+
+# Install modern Docker Compose v2 manually
+curl -SL "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
 systemctl enable docker
 systemctl start docker
