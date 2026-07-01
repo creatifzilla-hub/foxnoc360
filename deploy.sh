@@ -5,7 +5,7 @@ set -e
 # Run this on your server as root
 
 # Configuration (Edit these before running)
-FRONTEND_DOMAIN="foxnoc360.com"
+FRONTEND_DOMAIN="server.foxnoc360.com"
 BACKEND_DOMAIN="api.foxnoc360.com"
 EMAIL="admin@foxnoc360.com" # For Let's Encrypt SSL
 
