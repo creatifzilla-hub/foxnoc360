@@ -394,9 +394,16 @@ export default function DevicesAdminPage() {
         
         const result = await res.json();
         if (res.ok) {
-          alert(`Import complete! Successfully added ${result.success_count} devices.\nErrors: ${result.error_count}`);
-          if (result.errors && result.errors.length > 0) {
-            console.error("Import Errors:", result.errors);
+          if (result.error_count === 0) {
+            alert(`✅ Import complete! Successfully added ${result.success_count} devices.`);
+          } else {
+            const errorLines = result.errors.join("\n");
+            alert(
+              `⚠️ Import finished with issues!\n\n` +
+              `✅ Success: ${result.success_count} devices added\n` +
+              `❌ Failed: ${result.error_count} devices\n\n` +
+              `Reasons:\n${errorLines}`
+            );
           }
           fetchData();
         } else {
